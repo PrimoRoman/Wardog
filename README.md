@@ -1,4 +1,5 @@
 # Wardog
+![app-image](screenshot_of_app.png)
 Built a Warhammer game clock using Python. The purpose of this app is to count victory points, command points and time. 
 
 Points for painted armies is added when end game is clicked. If game is resumed points will be deducted until ended again.
