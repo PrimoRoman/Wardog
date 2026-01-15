@@ -1,0 +1,10 @@
+--- how to build app
+pyinstaller --windowed --noconfirm --name "Wardog clock" --icon wardog_icon.icns warhammerclock.py
+
+hdiutil create \
+  -volname "Wardog clock" \
+  -srcfolder "dist/Wardog clock.app" \
+  -ov \
+  -format UDZO \
+  "Wardog clock.dmg"
+
