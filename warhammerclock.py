@@ -8,9 +8,9 @@
 # max vp for secondary is 40
 #
 ######
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox, QFileDialog, QMessageBox, QFrame
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox, QFileDialog, QMessageBox, QFrame, QToolButton
+from PyQt6.QtGui import QFont, QEnterEvent
 from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QFont
 import sys
 import csv
 import time
@@ -121,42 +121,6 @@ class WarhammerClockApp(QWidget):
                 self.players[1].command_points += 1
             self.update_points()
             return
-
-
-        ######
-        # Shifting toggle players, e enc, q dec
-        # use this block instead of above logic if this is what you want.
-
-        # # Pressing "q" gives P1 +1 CP, shift+q deducts 1 CP from P1.
-        # ### Pressing "q" deducts 1 CP from P1, shift+q deducts 1 CP from P2.
-        # if key == Qt.Key.Key_Q:
-        #     # dec P2 CP
-        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
-        #         print("Shift+q")
-        #         if self.players[1].command_points > 0:
-        #             self.players[1].command_points -= 1
-        #     # dec P1 CP
-        #     else:
-        #         if self.players[0].command_points > 0:
-        #             self.players[0].command_points -= 1
-        #     self.update_points()
-        #     return
-
-        # # Pressing "e" gives P2 +1 CP, shift+e deducts 1 CP from P2.
-        # ### Pressing "e" adds 1 CP to P1, shift+e adds 1 CP to P2.
-        # if key == Qt.Key.Key_E:
-        #     # inc P1 CP
-        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
-        #         # if self.players[0].command_points > 0:
-        #         self.players[1].command_points += 1
-        #     # inc P2 CP
-        #     else:
-        #         # if self.players[1].command_points > 0:
-        #         self.players[0].command_points += 1
-        #     self.update_points()
-        #     return
-
-        #######
 
         super().keyPressEvent(event)
 
@@ -364,27 +328,8 @@ class WarhammerClockApp(QWidget):
 
             vp_h.addWidget(vp_lbl)
             self.vp_labels.append(vp_lbl)
-
-            #add VP button
-            #btn_add_vp = QPushButton("+") # vp add
-            #btn_add_vp.setStyleSheet("""QPushButton {color: white;width: 32px;height: 37px;font-size: 32px;font-weight: bold;border: 2px solid #d4af37;border-radius:10px;}""")
-            #btn_add_vp.clicked.connect(lambda _, p=player: self.add_vp(p))
-            #vp_h.addWidget(btn_add_vp)
-
-            #subtract VP button
-            #btn_sub_vp = QPushButton("-") # vp minus
-            #btn_sub_vp.setStyleSheet("""QPushButton {color: white;width: 32px;height: 37px;font-size: 32px;font-weight: bold;border: 2px solid #d4af37;border-radius:10px;}""")
-            #btn_sub_vp.clicked.connect(lambda _, p=player: self.remove_vp(p))
-            #vp_h.addWidget(btn_sub_vp)
             
             vbox.addLayout(vp_h) # submit row
-
-            #need to add another VP section with primary and secondary
-            #maximum for primary and secondary is 50 and 40 respectively 
-
-            
-            ###  <-------------------------------------------- here is where i am
-            ### add is painted bonus
 
             isPainted = QHBoxLayout() # is painted row
             
@@ -407,13 +352,6 @@ class WarhammerClockApp(QWidget):
             btn_end.clicked.connect(lambda _, p=player: self.end_turn(p))
             vbox.addWidget(btn_end)
 
-            #color_box ***remove this***
-            #color_combo = QComboBox()
-            #color_combo.addItems(PRIMARY_COLORS)
-            #color_combo.setStyleSheet("background-color: #2b2b2b; color: #e0dede;")
-            #color_combo.currentTextChanged.connect(lambda c, p=player, panel=panel: self.change_color(p, panel, c))
-            #vbox.addWidget(color_combo)
-
             grid.addWidget(panel) #export panel
             self.panels.append(panel) #export panel
 
@@ -429,7 +367,7 @@ class WarhammerClockApp(QWidget):
             ("Export CSV", self.export_csv)
         ]
 
-        # Add buttons to bottm bar
+        # Add buttons to bottom bar
         for text, handler in buttons: # awesome, adds buttons in list of names with function
             btn = QPushButton(text)
             btn.clicked.connect(handler)
@@ -437,14 +375,38 @@ class WarhammerClockApp(QWidget):
             btn.setFixedHeight(60)
             control_h.addWidget(btn)
 
-        # # Add shortcut legend to bottom bar
-        # hover_box = HoverWidget
-        # help_box = [
-        #     ("Shortcuts", self.show_legend)
-        # ]
-
         main_layout.addLayout(control_h)
         self.setLayout(main_layout)
+
+        # --- Help Button (Top Right Overlay) ---
+        self.help_button = QToolButton(self)
+        self.setStyleSheet(self.styleSheet() + """
+            QToolTip {
+                background-color: #2b2b2b;
+                color: #e0dede;
+                border: 2px solid #d4af37;
+                padding: 20px;
+                font-size: 24px;
+            }
+            """)
+        self.help_button.setText("?")
+        self.help_button.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        self.help_button.setFixedSize(40, 40)
+        self.help_button.setStyleSheet("""
+            QToolButton {
+                background-color: #2b2b2b;
+                color: #d4af37;
+                border: 2px solid #d4af37;
+                border-radius: 20px;
+            }
+            QToolButton:hover {
+                background-color: #3a3a3a;
+            }
+        """)
+
+        self.help_button.setToolTip(self.get_help_text())
+        self.help_button.raise_()
+        self.position_help_button()
 
     def reset_game(self):
         """Reset the entire game to initial state"""
@@ -687,6 +649,45 @@ class WarhammerClockApp(QWidget):
         end_game_msg_box.setMinimumWidth(600)
         #QMessageBox.information(self, "Game Over", msg + f"\nTotal Game Time: {total_hms}")
         end_game_msg_box.exec()
+
+    def position_help_button(self):
+        ### Format help button to top-right hand corner of the app
+        margin = 15
+        self.help_button.move(
+            self.width() - self.help_button.width() - margin,
+            margin
+        )
+    
+    def resizeEvent(self, event):
+        ### Resize the help window to make it visible (yes, sloppy. don't @ me)
+        super().resizeEvent(event)
+        self.position_help_button()
+
+    def get_help_text(self):
+        ### The body of the help/legend menu.
+        return """
+        <div style='min-width:600px'>
+        <h2 style='color:#d4af37;'>Keyboard Shortcuts</h2>
+
+        <b>Turn Control</b><br>
+        Space → Toggle Active Player<br>
+        Shift + Enter → Pass Turn (toggle clock & gain CP) <br><br>
+
+        <b>Primary Score</b><br>
+        = → +1 Primary<br>
+        - → -1 Primary<br><br>
+
+        <b>Secondary Score</b><br>
+        + (Shift + =) → +1 Secondary<br>
+        _ (Shift + -) → -1 Secondary<br><br>
+
+        <b>Command Points</b><br>
+        q → P1 +1 CP<br>
+        e → P2 +1 CP<br>
+        Shift + q → P1 -1 CP<br>
+        Shift + e → P2 -1 CP
+        </div>
+        """
         
 
 if __name__ == "__main__":
