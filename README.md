@@ -19,3 +19,22 @@ Points for painted armies is added when end game is clicked. If game is resumed 
 Mac users install here [Download](installers/Wardog_clock.dmg)
 
 Windows users intstall here [Download](installers/Wardog_Installer.exe)
+
+## Development
+
+Follow these steps to run locally (Mac):
+```
+brew install --cask miniconda
+conda --version
+> 25.11.1
+python3 --version
+> 3.9.6
+conda create -n wardog python=3.9.6
+conda init zsh # mac only, must open new terminal after running
+conda activate wardog
+> Success
+* pip3 install requirements.txt
+> Installed PyQt6
+* python3 warhammerclock.py
+> It just works. Sweet.
+```

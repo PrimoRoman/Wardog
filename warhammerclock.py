@@ -45,6 +45,174 @@ class WarhammerClockApp(QWidget):
         self.timer.timeout.connect(self.update_clock)
         self.build_ui()
 
+    def mousePressEvent(self, event):
+        # If currently focused widget is a QLineEdit and click is outside it,
+        # clear its focus so it stops receiving key events
+        focused = self.focusWidget()
+
+        if isinstance(focused, QLineEdit):
+            focused.clearFocus()
+
+        super().mousePressEvent(event)
+
+    def keyPressEvent(self, event):
+        ### Trigger logic depending on what key was pressed
+
+        # TODO: add a 'help' button that shows all keyboard shortcuts
+        key = event.key()
+        modifiers = event.modifiers()
+
+        # Do nothing if a QLineEdit is focused
+        if isinstance(self.focusWidget(), QLineEdit):
+            super().keyPressEvent(event)
+            return
+
+        # SPACE bar toggles active player
+        if key == Qt.Key.Key_Space:
+            self.toggle_active_player()
+            return
+
+        # SHIFT + ENTER passes the turn, auto incrementing round count if applicable and incrementing CP
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and modifiers & Qt.KeyboardModifier.ShiftModifier:
+            self.end_turn(self.active_player)
+            return
+
+        # + increments active player's primary by 1
+        if key == Qt.Key.Key_Equal and not (modifiers & Qt.KeyboardModifier.ShiftModifier):
+            self.adjust_primary(1)
+            return
+
+        # - Decrements active player's primary by 1
+        if key == Qt.Key.Key_Minus and not (modifiers & Qt.KeyboardModifier.ShiftModifier):
+            self.adjust_primary(-1)
+            return
+
+        # shift+ increments active player's secondary by 1
+        if key == Qt.Key.Key_Equal and (modifiers & Qt.KeyboardModifier.ShiftModifier):
+            self.adjust_secondary(1)
+            return
+
+        # shift- decrements active player's secondary by 1
+        if key == Qt.Key.Key_Minus and (modifiers & Qt.KeyboardModifier.ShiftModifier):
+            self.adjust_secondary(-1)
+            return
+
+
+        # Pressing "q" gives P1 +1 CP, shift+q deducts 1 CP from P1.
+        if key == Qt.Key.Key_Q:
+            # dec P1 CP
+            if modifiers & Qt.KeyboardModifier.ShiftModifier:
+                if self.players[0].command_points > 0:
+                    self.players[0].command_points -= 1
+            # inc P1 CP
+            else:
+                self.players[0].command_points += 1
+            self.update_points()
+            return
+
+        # Pressing "e" gives P2 +1 CP, shift+e deducts 1 CP from P2.
+        if key == Qt.Key.Key_E:
+            # dec P2 CP
+            if modifiers & Qt.KeyboardModifier.ShiftModifier:
+                if self.players[1].command_points > 0:
+                    self.players[1].command_points -= 1
+            # inc P2 CP
+            else:
+                self.players[1].command_points += 1
+            self.update_points()
+            return
+
+
+        ######
+        # Shifting toggle players, e enc, q dec
+        # use this block instead of above logic if this is what you want.
+
+        # # Pressing "q" gives P1 +1 CP, shift+q deducts 1 CP from P1.
+        # ### Pressing "q" deducts 1 CP from P1, shift+q deducts 1 CP from P2.
+        # if key == Qt.Key.Key_Q:
+        #     # dec P2 CP
+        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
+        #         print("Shift+q")
+        #         if self.players[1].command_points > 0:
+        #             self.players[1].command_points -= 1
+        #     # dec P1 CP
+        #     else:
+        #         if self.players[0].command_points > 0:
+        #             self.players[0].command_points -= 1
+        #     self.update_points()
+        #     return
+
+        # # Pressing "e" gives P2 +1 CP, shift+e deducts 1 CP from P2.
+        # ### Pressing "e" adds 1 CP to P1, shift+e adds 1 CP to P2.
+        # if key == Qt.Key.Key_E:
+        #     # inc P1 CP
+        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
+        #         # if self.players[0].command_points > 0:
+        #         self.players[1].command_points += 1
+        #     # inc P2 CP
+        #     else:
+        #         # if self.players[1].command_points > 0:
+        #         self.players[0].command_points += 1
+        #     self.update_points()
+        #     return
+
+        #######
+
+        super().keyPressEvent(event)
+
+    def toggle_active_player(self):
+        ### Pressing space toggles the active player
+
+        if not self.running:
+            return
+        if not self.active_player:
+            return
+
+        now = time.time()
+
+        # Stop current player clock
+        if self.active_player and self.active_player.last_active is not None:
+            elapsed = now - self.active_player.last_active
+            self.active_player.time_elapsed += elapsed
+            self.active_player.last_active = None
+
+        # Set new active player
+        self.active_player = self.players[1] if self.active_player == self.players[0] else self.players[0]
+        self.active_player.last_active = now
+
+        self.update_ui()
+
+    def adjust_primary(self, delta):
+        ### Inc/Decrement primary of active player by some value delta
+        if not self.active_player:
+            return
+
+        # Adjust total by modifying primary first
+        if delta > 0:
+            # 50 is max legal primary in Chapter Approved mission deck
+            if self.active_player.primary_points < 50: 
+                self.active_player.primary_points += 1
+        else:
+            if self.active_player.primary_points > 0:
+                self.active_player.primary_points -= 1
+
+        self.update_points()
+
+    def adjust_secondary(self, delta):
+        ### Inc/Decrement secondary of active player by some value delta
+        if not self.active_player:
+            return
+
+        if delta > 0:
+            # 40 is max legal secondary in Chapter Approved mission deck
+            if self.active_player.secondary_points < 40: 
+                self.active_player.secondary_points += 1
+        else:
+            if self.active_player.secondary_points > 0:
+                self.active_player.secondary_points -= 1
+
+        self.update_points()
+
     def build_ui(self):
         main_layout = QVBoxLayout() # main body
         
@@ -70,6 +238,8 @@ class WarhammerClockApp(QWidget):
 
             # name edit
             name_edit = QLineEdit(player.name) 
+            # Set focus, i.e. players only modify Name field when text box is selected.
+            name_edit.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
             name_edit.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             name_edit.setStyleSheet("background-color: #2b2b2b; color: #e0dede;")
             vbox.addWidget(name_edit)
@@ -83,7 +253,9 @@ class WarhammerClockApp(QWidget):
             self.time_labels.append(time_lbl)
 
             # cp label
-            label = QLabel("ComPts:")
+            # Will change this back before merging, "ComPts" was driving me CRAZY lol
+            # Same for the other changes to field names.
+            label = QLabel("  CP:")
             label.setFont(QFont("Menlo", 32))
             #label.setStyleSheet("font-size: 32pt;") # Increase to 18 points
             cp_h = QHBoxLayout()
@@ -116,7 +288,7 @@ class WarhammerClockApp(QWidget):
             
             # adding Primary:
             
-            label = QLabel("PriPts:")
+            label = QLabel("Prim:")
             label.setFont(QFont("Menlo", 32))
             label.setStyleSheet("font-size: 32pt;")
             pri_vp_h.addWidget(label)
@@ -148,7 +320,7 @@ class WarhammerClockApp(QWidget):
             sec_vp_h = QHBoxLayout() 
 
             # add label
-            label = QLabel("SecPts:")
+            label = QLabel("Scnd:")
             label.setFont(QFont("Menlo", 32))
             #label.setStyleSheet("font-size: 32pt;")
             sec_vp_h.addWidget(label)
@@ -250,18 +422,26 @@ class WarhammerClockApp(QWidget):
         control_h = QHBoxLayout()
         buttons = [  #adding bottom buttons
             ("Start Game", self.start_game),
-            ("Pause Game", self.pause_game),
-            ("Resume Game", self.resume_game),
+            ("Pause", self.pause_game),
+            ("Resume", self.resume_game),
             ("End Game", self.end_game),
             ("Reset Game", self.reset_game),
             ("Export CSV", self.export_csv)
         ]
+
+        # Add buttons to bottm bar
         for text, handler in buttons: # awesome, adds buttons in list of names with function
             btn = QPushButton(text)
             btn.clicked.connect(handler)
             btn.setFont(QFont("Arial", 24))
             btn.setFixedHeight(60)
             control_h.addWidget(btn)
+
+        # # Add shortcut legend to bottom bar
+        # hover_box = HoverWidget
+        # help_box = [
+        #     ("Shortcuts", self.show_legend)
+        # ]
 
         main_layout.addLayout(control_h)
         self.setLayout(main_layout)
@@ -478,6 +658,9 @@ class WarhammerClockApp(QWidget):
                         "Turn Time(s)": round(player.time_elapsed),
                         "Turn Time": total_hms
                     })
+
+    def show_legend(seld):
+        print("Show the legend")
 
     def end_game(self):
         self.pause_game()
