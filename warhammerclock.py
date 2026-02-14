@@ -74,10 +74,7 @@ class WarhammerClockApp(QWidget):
 
         # SHIFT + ENTER passes the turn, auto incrementing round count if applicable and incrementing CP
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and modifiers & Qt.KeyboardModifier.ShiftModifier:
-            self.toggle_active_player()
-            for p in self.players:
-                p.command_points += 1
-            self.update_points()
+            self.end_turn(self.active_player)
             return
 
         # + increments active player's primary by 1
@@ -139,7 +136,7 @@ class WarhammerClockApp(QWidget):
             self.active_player.last_active = None
 
         # Set new active player
-        self.active_player = self.players[1] if player == self.players[0] else self.players[0]
+        self.active_player = self.players[1] if self.active_player == self.players[0] else self.players[0]
         self.active_player.last_active = now
 
         self.update_ui()
