@@ -97,11 +97,14 @@ class WarhammerClockApp(QWidget):
             self.adjust_secondary(-1)
             return
 
+
         # Pressing "q" gives P1 +1 CP, shift+q deducts 1 CP from P1.
         if key == Qt.Key.Key_Q:
+            # dec P1 CP
             if modifiers & Qt.KeyboardModifier.ShiftModifier:
                 if self.players[0].command_points > 0:
                     self.players[0].command_points -= 1
+            # inc P1 CP
             else:
                 self.players[0].command_points += 1
             self.update_points()
@@ -109,13 +112,51 @@ class WarhammerClockApp(QWidget):
 
         # Pressing "e" gives P2 +1 CP, shift+e deducts 1 CP from P2.
         if key == Qt.Key.Key_E:
+            # dec P2 CP
             if modifiers & Qt.KeyboardModifier.ShiftModifier:
                 if self.players[1].command_points > 0:
                     self.players[1].command_points -= 1
+            # inc P2 CP
             else:
                 self.players[1].command_points += 1
             self.update_points()
             return
+
+
+        ######
+        # Shifting toggle players, e enc, q dec
+        # use this block instead of above logic if this is what you want.
+
+        # # Pressing "q" gives P1 +1 CP, shift+q deducts 1 CP from P1.
+        # ### Pressing "q" deducts 1 CP from P1, shift+q deducts 1 CP from P2.
+        # if key == Qt.Key.Key_Q:
+        #     # dec P2 CP
+        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
+        #         print("Shift+q")
+        #         if self.players[1].command_points > 0:
+        #             self.players[1].command_points -= 1
+        #     # dec P1 CP
+        #     else:
+        #         if self.players[0].command_points > 0:
+        #             self.players[0].command_points -= 1
+        #     self.update_points()
+        #     return
+
+        # # Pressing "e" gives P2 +1 CP, shift+e deducts 1 CP from P2.
+        # ### Pressing "e" adds 1 CP to P1, shift+e adds 1 CP to P2.
+        # if key == Qt.Key.Key_E:
+        #     # inc P1 CP
+        #     if modifiers & Qt.KeyboardModifier.ShiftModifier:
+        #         # if self.players[0].command_points > 0:
+        #         self.players[1].command_points += 1
+        #     # inc P2 CP
+        #     else:
+        #         # if self.players[1].command_points > 0:
+        #         self.players[0].command_points += 1
+        #     self.update_points()
+        #     return
+
+        #######
 
         super().keyPressEvent(event)
 
@@ -381,18 +422,26 @@ class WarhammerClockApp(QWidget):
         control_h = QHBoxLayout()
         buttons = [  #adding bottom buttons
             ("Start Game", self.start_game),
-            ("Pause Game", self.pause_game),
-            ("Resume Game", self.resume_game),
+            ("Pause", self.pause_game),
+            ("Resume", self.resume_game),
             ("End Game", self.end_game),
             ("Reset Game", self.reset_game),
             ("Export CSV", self.export_csv)
         ]
+
+        # Add buttons to bottm bar
         for text, handler in buttons: # awesome, adds buttons in list of names with function
             btn = QPushButton(text)
             btn.clicked.connect(handler)
             btn.setFont(QFont("Arial", 24))
             btn.setFixedHeight(60)
             control_h.addWidget(btn)
+
+        # # Add shortcut legend to bottom bar
+        # hover_box = HoverWidget
+        # help_box = [
+        #     ("Shortcuts", self.show_legend)
+        # ]
 
         main_layout.addLayout(control_h)
         self.setLayout(main_layout)
@@ -609,6 +658,9 @@ class WarhammerClockApp(QWidget):
                         "Turn Time(s)": round(player.time_elapsed),
                         "Turn Time": total_hms
                     })
+
+    def show_legend(seld):
+        print("Show the legend")
 
     def end_game(self):
         self.pause_game()
