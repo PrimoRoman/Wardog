@@ -45,6 +45,16 @@ class WarhammerClockApp(QWidget):
         self.timer.timeout.connect(self.update_clock)
         self.build_ui()
 
+    def mousePressEvent(self, event):
+        # If currently focused widget is a QLineEdit and click is outside it,
+        # clear its focus so it stops receiving key events
+        focused = self.focusWidget()
+
+        if isinstance(focused, QLineEdit):
+            focused.clearFocus()
+
+        super().mousePressEvent(event)
+
     def build_ui(self):
         main_layout = QVBoxLayout() # main body
         
@@ -70,6 +80,7 @@ class WarhammerClockApp(QWidget):
 
             # name edit
             name_edit = QLineEdit(player.name) 
+            name_edit.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
             name_edit.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             name_edit.setStyleSheet("background-color: #2b2b2b; color: #e0dede;")
             vbox.addWidget(name_edit)
